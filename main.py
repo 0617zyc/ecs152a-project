@@ -11,22 +11,21 @@ class Event:
         self.prev_event = prev_event
 
 # Global variables (lel)
-g_MAXBUFFER = 1
+g_MAXBUFFER = 0
 g_length = 0
 g_time = 0
-g_service_rate = 0
-g_arrival_rate = 0
 g_queue = deque()
 GEL = []
 
 # Global variables for collecting statistics
 g_utilization = 0
 g_mean_queue_length = 0
+g_last_queue_changed = 0
 g_packets_dropped = 0
 
 def process_arrival_event(lamb, mu, event):
     """Process arrival events."""
-    global g_time, g_length, g_packets_dropped, g_utilization
+    global g_time, g_length, g_packets_dropped, g_utilization, g_last_queue_changed
 
     # Update time, create new arrival event, and insert into GEL
     # Save the previous time for utilization calculation
@@ -60,12 +59,18 @@ def process_arrival_event(lamb, mu, event):
             g_packets_dropped += 1
         else:
             print("Adding to queue")
+            queue_calculation()
+            g_last_queue_changed = event.time
             g_queue.append(packet_service_time)
             g_length += 1
 
 def process_departure_event(event):
     """Process departure events."""
     global g_time, g_length, g_utilization
+
+    # Update mean queue length
+    queue_calculation()
+    g_last_queue_changed = event.time
 
     # Update total utilization time
     g_utilization += event.time - g_time
@@ -87,18 +92,28 @@ def generate_time(rate):
     u = uniform(0,1)
     return ((-1/rate)*log(1-u))
 
-def initialize(lamb):
+def queue_calculation():
+    """Generate an area of the total queue curve."""
+    global g_time, g_mean_queue_length, g_last_queue_changed, g_length
+    g_mean_queue_length += (g_time - g_last_queue_changed) * g_length
+
+def initialize(lamb, buffer_size):
     """Initialize the process."""
+    global g_MAXBUFFER
+
     # Generate first arrival event with some time
     event = Event(g_time + generate_time(lamb), 'a')
     GEL.append(event)
+    g_MAXBUFFER = buffer_size
 
 def print_GEL():
     """Print GEL for debugging purposes."""
     GEL.sort(key=lambda x: x.time)
+    """
     print("Printing GEL:")
     for event in GEL:
         print("Event: " + event.event_type + " " + str(event.time))
+    """
 
 def process_statistics():
     global g_time, g_utilization, g_packets_dropped
@@ -107,18 +122,19 @@ def process_statistics():
     print("Total utilization time: " + str(g_utilization))
     print("Total utilization percentage: " + str(g_utilization / g_time))
     print("Total packets dropped: " + str(g_packets_dropped))
+    print("Mean queue length: " + str(g_mean_queue_length / g_time))
 
-def main(lamb, mu):
-    initialize(lamb)
-    for i in range(0, 1000):
-        print("Current time: " + str(g_time))
+def main(lamb, mu, buffer_size):
+    initialize(lamb, buffer_size)
+    for i in range(0, 10000):
+        #print("Current time: " + str(g_time))
         print("Buffer length: " + str(g_length))
         event = GEL.pop(0)
-        print("Processing event: " + event.event_type + " " + str(event.time))
+        #print("Processing event: " + event.event_type + " " + str(event.time))
         if event.event_type == 'a':
             process_arrival_event(lamb, mu, event)
         else:
             process_departure_event(event)
     process_statistics()
 
-main(0.75, 1)
+main(0.9, 1, 125000)
