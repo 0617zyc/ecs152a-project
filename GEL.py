@@ -58,7 +58,7 @@ class Event:
 """
 
 class DoublyLinkList(object):
-	def __init__(self, d = None)
+	def __init__(self, d = None):
 		self.head = d
 
 	def isEmpty(self):
@@ -69,7 +69,7 @@ class DoublyLinkList(object):
 		new_node = Node(d)
 		if self.head is None:
 			self.head = new_node
-		elif self.head.get_data: > new_node.get_data:
+		elif self.head.get_data > new_node.get_data:
 			new_node.set_next(self.head)
 			self.head.set_prev(new_node)
 			self.head = new_node
@@ -99,5 +99,8 @@ class DoublyLinkList(object):
 		return front
 
 		
+
+
+
 		
 		
