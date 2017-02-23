@@ -1,28 +1,34 @@
 
-class Node:
+class Node(object):
 
 	def __init__(self, d , next = None, prev = None):
-		self.data = d
-		self.next_node = next
-		self.prev_node = prev
+		self._data = d
+		self._next_node = next
+		self._prev_node = prev
 
-	def get_next(self):
-		return self.next_node
+	@property
+	def next(self):
+		return self._next_node
 
 	def set_next(self,next):
-		self.next_node = next
+		self._next_node = next
+		return self._next_node
 
-	def get_prev(self):
-		return self.prev_node
+	@property
+	def prev(self):
+		return self._prev_node
 
 	def set_prev(self,prev):
-		self.prev_node = prev
+		self._prev_node = prev
+		return self._prev_node
 
-	def get_data(self):
-		return self.data
+	@property
+	def data(self):
+		return self._data
 
 	def set_data(self,d):
-		self.data = d
+		self._data = d
+		return self._data
 
 """
 class Event:
@@ -69,22 +75,22 @@ class DoublyLinkList(object):
 		new_node = Node(d)
 		if self.head is None:
 			self.head = new_node
-		elif self.head.get_data > new_node.get_data:
+		elif self.head.data > new_node.data:
 			new_node.set_next(self.head)
 			self.head.set_prev(new_node)
 			self.head = new_node
 		else:
 			prev = self.head
-			curr = self.head.get_next
+			curr = self.head.next
 			while curr is not None:
-				if curr.get_data > new_node.get_data:
+				if curr.data > new_node.data:
 					prev.set_next(new_node)
 					new_node.set_prev(prev)
 					new_node.set_next(curr)
 					curr.set_prev(new_node)
 					return new_node
 				prev = curr
-				curr = curr.get_next
+				curr = curr.next
 
 # Set current head to the next thing current head is poniting to. Ex. 1 -> 2 -> 3 -> 4 
 # 1 is the head and it is pointing to 2. So you set the current header which is 1 to 2 so 
@@ -99,7 +105,14 @@ class DoublyLinkList(object):
 		return front
 
 		
+# Trying to test if GEL works
+new_list = DoublyLinkList()
+print ("isEmpty:"), new_list.isEmpty()
 
+new_list.add(14)
+new_list.add(12)
+new_list.add(11)
+new_list.add(13)
 
 
 		
