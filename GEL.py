@@ -93,7 +93,7 @@ class DoublyLinkList(object):
 	def remove():
 		front = head
 		if isEmpty:
-			print "GEL is empty"
+			print ("GEL is empty")
 		else:
 			head = head.get_next
 		return front
