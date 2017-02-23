@@ -11,7 +11,7 @@ class Event:
         self.prev_event = prev_event
 
 # Global variables (lel)
-g_MAXBUFFER = 0
+g_MAXBUFFER = 1
 g_length = 0
 g_time = 0
 g_service_rate = 0
@@ -19,41 +19,56 @@ g_arrival_rate = 0
 g_queue = deque()
 GEL = []
 
+# Global variables for collecting statistics
+g_utilization = 0
+g_mean_queue_length = 0
+g_packets_dropped = 0
+
 def process_arrival_event(lamb, mu, event):
     """Process arrival events."""
-    global g_time, g_length
+    global g_time, g_length, g_packets_dropped, g_utilization
 
     # Update time, create new arrival event, and insert into GEL
+    # Save the previous time for utilization calculation
+    prev_time = g_time
     g_time = event.time
-    new_arrival_event = Event(g_time + generate_time(lamb), 'a')
+    next_arrival_event = Event(g_time + generate_time(lamb), 'a')
     packet_service_time = generate_time(mu)
-    GEL.append(new_arrival_event)
+    GEL.append(next_arrival_event)
+
     # FIXME
-    GEL.sort(key=lambda x: x.time)
-    print("Printing GEL:")
-    for item in GEL:
-        print(item.time)
+    #print("Next arrival event added")
+    print_GEL()
 
     # Server is free
     if g_length == 0:
+        g_length += 1
         new_departure_event = Event(g_time + packet_service_time, 'd')
         GEL.append(new_departure_event)
+
         # FIXME
-        GEL.sort(key=lambda x: x.time)
-        print("Printing GEL:")
-        for item in GEL:
-            print(item.time)
+        #print("Next departure event added")
+        print_GEL()
+
     else:
+        # Utilization calculation
+        g_utilization += event.time - prev_time
+
         # Buffer is currently full
         if (g_length - 1) >= g_MAXBUFFER:
             print("Packet dropped")
+            g_packets_dropped += 1
         else:
-            g_queue.append(generate_time(mu))
+            print("Adding to queue")
+            g_queue.append(packet_service_time)
             g_length += 1
 
 def process_departure_event(event):
     """Process departure events."""
-    global g_time, g_length
+    global g_time, g_length, g_utilization
+
+    # Update total utilization time
+    g_utilization += event.time - g_time
 
     # Update time and length of buffer
     g_time = event.time
@@ -63,11 +78,9 @@ def process_departure_event(event):
         packet = g_queue.popleft()
         departure_packet = Event(g_time + packet, 'd')
         GEL.append(departure_packet)
+
         # FIXME
-        print("Printing GEL:")
-        GEL.sort(key=lambda x: x.time)
-        for item in GEL:
-            print(item.time)
+        print_GEL()
 
 def generate_time(rate):
     """Generate a inter-arrival/transmit time based on the rate."""
@@ -80,13 +93,32 @@ def initialize(lamb):
     event = Event(g_time + generate_time(lamb), 'a')
     GEL.append(event)
 
+def print_GEL():
+    """Print GEL for debugging purposes."""
+    GEL.sort(key=lambda x: x.time)
+    print("Printing GEL:")
+    for event in GEL:
+        print("Event: " + event.event_type + " " + str(event.time))
+
+def process_statistics():
+    global g_time, g_utilization, g_packets_dropped
+
+    print("Total time: " + str(g_time))
+    print("Total utilization time: " + str(g_utilization))
+    print("Total utilization percentage: " + str(g_utilization / g_time))
+    print("Total packets dropped: " + str(g_packets_dropped))
+
 def main(lamb, mu):
     initialize(lamb)
-    for i in range(0, 10):
+    for i in range(0, 1000):
+        print("Current time: " + str(g_time))
+        print("Buffer length: " + str(g_length))
         event = GEL.pop(0)
+        print("Processing event: " + event.event_type + " " + str(event.time))
         if event.event_type == 'a':
             process_arrival_event(lamb, mu, event)
         else:
             process_departure_event(event)
+    process_statistics()
 
-main(0.25, 1)
+main(0.75, 1)
